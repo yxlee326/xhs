@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>李雅瑄的AI商业笔记优化助手</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f0f5;
+        }
+        .container {
+            max-width: 900px;
+        }
+        .panel {
+            @apply p-6 rounded-2xl shadow-lg transition-all duration-300;
+        }
+        .input-group label {
+            @apply text-gray-700 font-medium mb-1;
+            font-size: 1.25rem; /* 增大标签字体 */
+        }
+        .input-group input, .input-group textarea, .input-group select {
+            @apply w-full border border-red-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-red-300 transition-all duration-200;
+            font-size: 1.125rem; /* 增大输入框字体 */
+        }
+        .styled-button {
+            @apply font-bold py-4 px-8 rounded-full shadow-lg transition-all duration-200 transform hover:scale-105;
+            background-image: linear-gradient(to right, #ff6b6b, #ff416c);
+            color: white;
+            box-shadow: 0 4px 6px rgba(255, 65, 108, 0.3), 0 1px 3px rgba(255, 65, 108, 0.15);
+            border-radius: 9999px; /* Ensure oval shape */
+            white-space: nowrap; /* Prevent text from wrapping */
+        }
+        .styled-button-active {
+            @apply scale-105;
+            background-image: linear-gradient(to right, #e05e5e, #e03a5c);
+            box-shadow: 0 6px 8px rgba(255, 65, 108, 0.4), 0 2px 4px rgba(255, 65, 108, 0.2);
+        }
+        .option-button-styled {
+            @apply font-bold py-2 px-4 rounded-full shadow-md transition-all duration-200 transform hover:scale-105;
+            background-color: #f7f7f7;
+            color: #555;
+            border: 1px solid #ddd;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border-radius: 9999px; /* Ensure oval shape */
+            white-space: nowrap; /* Prevent text from wrapping */
+        }
+        .option-button-styled.active {
+            background-image: linear-gradient(to right, #ff6b6b, #ff416c);
+            color: white;
+            box-shadow: 0 4px 6px rgba(255, 65, 108, 0.3), 0 1px 3px rgba(255, 65, 108, 0.15);
+        }
+        .content-card {
+            @apply bg-white rounded-2xl shadow-md p-6 mb-6;
+        }
+        .loader {
+            border-top-color: #ff416c;
+            border-right-color: #ff6b6b;
+        }
+        h1 { font-size: 2.5rem; }
+        p { font-size: 1.25rem; }
+        .main-buttons-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 1.5rem; /* Adds space between the buttons */
+        }
+        .main-buttons-container .styled-button {
+            width: 200px; /* Set a consistent width for both buttons */
+        }
+        .input-group input, .input-group textarea {
+            border: 1px solid #d1d5db; /* Add a clear border for the input fields */
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+        }
+    </style>
+</head>
+<body class="bg-red-50 flex items-center justify-center min-h-screen p-4">
+
+    <!-- Main Container -->
+    <div class="container mx-auto bg-white p-8 rounded-3xl shadow-2xl">
+        <div class="text-center mb-8">
+            <h1 class="font-extrabold text-gray-900 mb-2 text-4xl">李雅瑄的AI商业笔记优化助手</h1>
+            <p class="text-gray-500 text-xl">一款为品牌方和内容创作者设计的 AI 工具</p>
+        </div>
+
+        <!-- Main Content Area -->
+        <div id="content-area" class="panel bg-white">
+            <div id="welcome-message" class="text-center text-gray-500">
+                <p class="text-lg">请选择一个模式开始体验...</p>
+                <div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4 mt-6">
+                    <button id="generate-btn" class="styled-button w-40">生成笔记</button>
+                    <button id="optimize-btn" class="styled-button w-40">优化笔记</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_KEY = "AIzaSyCLEB1z4ZpPE8xiXbzY5PMelOrF5nN6fyA"; 
+        const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=" + API_KEY;
+
+        const contentArea = document.getElementById('content-area');
+        
+        const generateForm = `
+            <div class="panel bg-white">
+                <h2 class="text-2xl font-bold text-center text-red-500 mb-6">生成笔记</h2>
+                <form id="generate-form">
+                    <div class="input-group mb-4">
+                        <label for="product_name" class="block">产品/服务名称</label>
+                        <input type="text" id="product_name" name="product_name" placeholder="如：兰蔻菁纯眼霜" value="兰蔻菁纯眼霜" required class="border-2 border-gray-300 rounded-lg p-2 mt-1 w-full">
+                    </div>
+                    <div class="input-group mb-4">
+                        <label for="selling_points" class="block">核心卖点</label>
+                        <input type="text" id="selling_points" name="selling_points" placeholder="如：针对初老、黑眼圈" value="淡化黑眼圈、改善细纹、质地轻薄" required class="border-2 border-gray-300 rounded-lg p-2 mt-1 w-full">
+                    </div>
+                    <div class="input-group mb-4">
+                        <label for="target_audience" class="block">目标人群画像</label>
+                        <input type="text" id="target_audience" name="target_audience" placeholder="如：25-35岁职场女性" value="25-35岁职场女性，注重眼部护理" required class="border-2 border-gray-300 rounded-lg p-2 mt-1 w-full">
+                    </div>
+                    <div class="input-group mb-6">
+                        <label for="style" class="block mb-2">笔记风格</label>
+                        <div id="style-buttons" class="flex flex-wrap gap-2">
+                            <button type="button" class="option-button-styled active" data-value="真实分享">真实分享</button>
+                            <button type="button" class="option-button-styled" data-value="干货科普">干货科普</button>
+                            <button type="button" class="option-button-styled" data-value="对比测评">对比测评</button>
+                        </div>
+                        <input type="hidden" id="style" name="style" value="真实分享">
+                    </div>
+                    <div class="flex flex-row space-x-4 mt-4 w-full justify-center">
+                        <button type="submit" class="styled-button flex-1">生成笔记</button>
+                        <button type="button" onclick="goBackToMain()" class="flex-1 bg-gray-200 text-gray-700 py-3 px-6 rounded-full font-bold transition-all duration-200 transform hover:scale-105 hover:bg-gray-300">返回主页</button>
+                    </div>
+                </form>
+            </div>
+        `;
+
+        const optimizeForm = `
+            <div class="panel bg-white">
+                <h2 class="text-2xl font-bold text-center text-red-500 mb-6">优化笔记</h2>
+                <form id="optimize-form">
+                    <div class="input-group mb-4">
+                        <label for="original_note" class="block">粘贴您要优化的笔记文案</label>
+                        <textarea type="text" id="original_note" name="original_note" rows="6" placeholder="请在这里粘贴您的笔记文案..." required class="border-2 border-gray-300 rounded-lg p-2 mt-1 w-full">姐妹们，我的天！最近发现一个巨好用的眼霜，想分享给你们！就是这款兰蔻菁纯眼霜！一开始是被颜值吸引的，瓶子超美！用了大概一周，感觉眼下的小干纹淡了些，黑眼圈也好像没那么重了，感觉还不错。但是价格有点小贵，姐妹们觉得值得吗？在线等一个姐妹们的真实反馈！#兰蔻 #眼霜 #护肤 #好物分享 #眼部护理</textarea>
+                    </div>
+                    <div class="input-group mb-6">
+                        <label for="goal" class="block">您的优化目标</label>
+                        <input type="text" id="goal" name="goal" placeholder="如：提升笔记收藏率" value="提升笔记可读性和种草效果" required class="border-2 border-gray-300 rounded-lg p-2 mt-1 w-full">
+                    </div>
+                    <div class="flex flex-row space-x-4 mt-4 w-full">
+                        <button type="submit" class="styled-button flex-1">获取优化建议</button>
+                        <button type="button" onclick="goBackToMain()" class="flex-1 bg-gray-200 text-gray-700 py-3 px-6 rounded-full font-bold transition-all duration-200 transform hover:scale-105 hover:bg-gray-300">返回主页</button>
+                    </div>
+                </form>
+            </div>
+        `;
+
+        async function callGenerativeAI(prompt, retryCount = 0) {
+            try {
+                const payload = {
+                    contents: [{ parts: [{ text: prompt }] }],
+                    tools: [{ "google_search": {} }],
+                    systemInstruction: { parts: [{ text: "你是一位拥有百万粉丝的小红书美妆博主，擅长创作高点击、高收藏、高转化的种草笔记。你的写作风格真诚、有趣，善于捕捉用户痛点并给出切实可行的解决方案。" }] },
+                };
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) {
+                    if (response.status === 429 && retryCount < 3) {
+                        const delay = Math.pow(2, retryCount) * 1000;
+                        await new Promise(res => setTimeout(res, delay));
+                        return callGenerativeAI(prompt, retryCount + 1);
+                    }
+                    throw new Error(`API error: ${response.status} ${response.statusText}`);
+                }
+                const result = await response.json();
+                return result.candidates?.[0]?.content?.parts?.[0]?.text || "AI生成失败，请稍后再试。";
+            } catch (error) {
+                console.error("Error calling AI:", error);
+                return "AI服务异常，请检查网络或稍后重试。";
+            }
+        }
+        
+        function updateButtonStyles(activeBtn) {
+            const generateButton = document.getElementById('generate-btn');
+            const optimizeButton = document.getElementById('optimize-btn');
+            
+            if (generateButton) {
+                generateButton.classList.remove('styled-button-active');
+            }
+            if (optimizeButton) {
+                optimizeButton.classList.remove('styled-button-active');
+            }
+
+            if (activeBtn === 'generate' && generateButton) {
+                generateButton.classList.add('styled-button-active');
+            } else if (activeBtn === 'optimize' && optimizeButton) {
+                optimizeButton.classList.add('styled-button-active');
+            }
+        }
+        
+        function showLoading() {
+            contentArea.innerHTML = `
+                <div class="flex flex-col items-center justify-center p-8">
+                    <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12 mb-4 animate-spin"></div>
+                    <p class="text-gray-600">AI 正在努力创作中...</p>
+                </div>
+            `;
+        }
+
+        function renderMarkdown(markdownText) {
+            const cleanedText = markdownText.replace(/\n\s*\n/g, '\n').replace(/\*/g, '');
+            const sections = cleanedText.split('###').filter(s => s.trim() !== '');
+            let html = '';
+            sections.forEach(section => {
+                const lines = section.trim().split('\n');
+                const title = lines[0].trim().replace(':', '');
+                const content = lines.slice(1).join('\n').trim();
+
+                let sectionHtml = '';
+                let icon = '';
+                if (title.includes('标题')) icon = '✨';
+                if (title.includes('正文')) icon = '📝';
+                if (title.includes('痛点共鸣')) icon = '😥';
+                if (title.includes('产品介绍')) icon = '💡';
+                if (title.includes('使用体验')) icon = '👍';
+                if (title.includes('互动引导')) icon = '💬';
+                if (title.includes('热门标签')) icon = '🏷️';
+                if (title.includes('配图建议')) icon = '🖼️';
+                if (title.includes('原文分析')) icon = '🔍';
+                if (title.includes('优化建议')) icon = '💡';
+                
+                const contentLines = content.split('\n');
+                contentLines.forEach(line => {
+                    let formattedLine = line.replace(/^(.*?):\s*/, '<strong>$1:</strong> ');
+                    sectionHtml += `<p class="mb-2 leading-relaxed">${formattedLine}</p>`;
+                });
+                
+                html += `
+                    <div class="content-card">
+                        <h3 class="text-xl font-bold mb-2">${icon} ${title}</h3>
+                        <div>${sectionHtml}</div>
+                    </div>
+                `;
+            });
+            return html;
+        }
+
+        function goBackToMain() {
+            contentArea.innerHTML = `
+                <div id="welcome-message" class="text-center text-gray-500">
+                    <p class="text-lg">请选择一个模式开始体验...</p>
+                    <div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4 mt-6">
+                        <button id="generate-btn" class="styled-button w-40">生成笔记</button>
+                        <button id="optimize-btn" class="styled-button w-40">优化笔记</button>
+                    </div>
+                </div>
+            `;
+            attachEventListeners();
+        }
+
+        function handleGenerateForm(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const product_name = formData.get('product_name');
+            const selling_points = formData.get('selling_points');
+            const target_audience = formData.get('target_audience');
+            const style = formData.get('style');
+
+            const prompt = `
+                请根据以下信息，为“${product_name}”生成一篇精简的小红书种草笔记文案。
+                核心卖点：${selling_points}
+                目标人群画像：${target_audience}
+                写作风格：${style}
+                内容需要精炼，适合小红书用户碎片化阅读习惯。
+                请严格按照小红书爆款笔记结构，使用 Markdown 格式进行输出。内容请包含以下部分：
+                - ### 标题: （1-2个，精炼吸引人）
+                - ### 正文:
+                    - **痛点共鸣** (一句话概括)
+                    - **产品介绍** (突出1-2个核心优势)
+                    - **使用体验** (用简洁的语言描述)
+                - ### 互动引导: (简短有力)
+                - ### 热门标签:
+                - ### 配图建议:
+                请在每个部分前都加上对应的 Emoji，如✨ 📝 💬 🏷️ 🖼️
+            `;
+
+            showLoading();
+            callGenerativeAI(prompt).then(response => {
+                const formattedContent = renderMarkdown(response);
+                contentArea.innerHTML = `
+                    <div class="p-6">
+                        <h2 class="text-2xl font-bold text-red-500 mb-4">AI 生成的笔记</h2>
+                        <div class="p-4 bg-gray-50 rounded-lg whitespace-pre-wrap">${formattedContent}</div>
+                        <div class="flex flex-row space-x-4 mt-4 w-full">
+                            <button type="submit" class="styled-button flex-1">生成笔记</button>
+                            <button type="button" onclick="goBackToMain()" class="flex-1 bg-gray-200 text-gray-700 py-3 px-6 rounded-full font-bold transition-all duration-200 transform hover:scale-105 hover:bg-gray-300">返回主页</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function handleOptimizeForm(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const original_note = formData.get('original_note');
+            const goal = formData.get('goal');
+            
+            const prompt = `
+                你是一位资深的小红书运营专家，拥有强大的数据分析能力和内容洞察力。请对以下小红书笔记文案进行深度分析，并根据用户目标“${goal}”，提供精简的优化建议。
+                现有笔记文案：${original_note}
+                优化建议需要简明扼要，直接指出核心问题并给出可执行的修改方案。
+                请严格按照以下结构，使用 Markdown 格式进行输出。内容请包含：
+                - ### 原文分析:
+                - ### 优化建议:
+                    - **标题分析与优化** (给出1-2个优化方案)
+                    - **文案结构与内容洞察** (指出核心问题并给出简洁的修改建议)
+                    - **互动与转化引导** (简短有力)
+                    - **标签与配图建议**
+                请在每个部分前都加上对应的 Emoji，如📝 💡
+            `;
+
+            showLoading();
+            callGenerativeAI(prompt).then(response => {
+                const formattedContent = renderMarkdown(response);
+                contentArea.innerHTML = `
+                    <div class="p-6">
+                        <h2 class="text-2xl font-bold text-red-500 mb-4">AI 提供的优化建议</h2>
+                        <div class="p-4 bg-gray-50 rounded-lg whitespace-pre-wrap">${formattedContent}</div>
+                        <div class="flex flex-row space-x-4 mt-4 w-full">
+                            <button type="submit" class="styled-button flex-1">获取优化建议</button>
+                            <button type="button" onclick="goBackToMain()" class="flex-1 bg-gray-200 text-gray-700 py-3 px-6 rounded-full font-bold transition-all duration-200 transform hover:scale-105 hover:bg-gray-300">返回主页</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function attachEventListeners() {
+            const generateBtn = document.getElementById('generate-btn');
+            const optimizeBtn = document.getElementById('optimize-btn');
+
+            if (generateBtn) {
+                generateBtn.addEventListener('click', () => {
+                    contentArea.innerHTML = generateForm;
+                    updateButtonStyles('generate');
+                    const styleButtons = document.querySelectorAll('.option-button-styled');
+                    styleButtons.forEach(button => {
+                        button.addEventListener('click', () => {
+                            styleButtons.forEach(btn => btn.classList.remove('active'));
+                            button.classList.add('active');
+                            document.getElementById('style').value = button.dataset.value;
+                        });
+                    });
+                    document.getElementById('generate-form').addEventListener('submit', handleGenerateForm);
+                });
+            }
+
+            if (optimizeBtn) {
+                optimizeBtn.addEventListener('click', () => {
+                    contentArea.innerHTML = optimizeForm;
+                    updateButtonStyles('optimize');
+                    document.getElementById('optimize-form').addEventListener('submit', handleOptimizeForm);
+                });
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            attachEventListeners();
+        });
+    </script>
+</body>
+</html>
